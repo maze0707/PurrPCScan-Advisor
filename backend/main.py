@@ -41,6 +41,54 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.get("/health/full")
+def health_full():
+    """Run a set of quick smoke checks and return pass/fail JSON suitable for automated monitors.
+
+    This calls several lightweight diagnostics and returns their results. The endpoint is
+    conservative: it reports details and indicates overall `ok` if the checks ran without exceptions.
+    """
+    results = {}
+    ok = True
+    try:
+        results['battery'] = get_battery_health_info()
+    except Exception as e:
+        results['battery'] = {"error": str(e)}
+        ok = False
+
+    try:
+        results['system'] = get_system_diagnostics()
+    except Exception as e:
+        results['system'] = {"error": str(e)}
+        ok = False
+
+    try:
+        results['startup'] = get_startup_insights()
+    except Exception as e:
+        results['startup'] = {"error": str(e)}
+        ok = False
+
+    try:
+        results['suspicious_processes'] = get_suspicious_processes(limit=5)
+    except Exception as e:
+        results['suspicious_processes'] = {"error": str(e)}
+        ok = False
+
+    try:
+        results['thermal'] = get_thermal_status()
+    except Exception as e:
+        results['thermal'] = {"error": str(e)}
+        ok = False
+
+    try:
+        results['large_files'] = get_large_files(limit=10)
+    except Exception as e:
+        results['large_files'] = {"error": str(e)}
+        ok = False
+
+    return {"ok": ok, "results": results}
+
+
 @app.get("/system-info")
 def system_info():
     return get_system_info()
