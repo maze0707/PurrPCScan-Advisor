@@ -1,5 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from pydantic import BaseModel
+from typing import List
+from google import genai
+from google.genai import types
+
+class ChatMessage(BaseModel):
+    role: str       # 'user' or 'model'
+    content: str
+
+class ChatPayload(BaseModel):
+    messages: List[ChatMessage]
 
 from system_scanner import (
     check_software_requirements,
@@ -189,3 +201,74 @@ def large_files():
 @app.get("/can-run")
 def can_run(required_memory_gb: float | None = None, required_storage_gb: float | None = None):
     return check_software_requirements(required_memory_gb, required_storage_gb)
+
+
+
+# Initialize Gemini Client (Uses the environment variable you just set)
+client = genai.Client()
+
+# 1. Your ChatMessage schema stays exactly like this:
+class ChatMessage(BaseModel):
+    role: str       # 'user' or 'model'
+    content: str
+
+# 2. Update your ChatPayload to accept the incoming data dictionary:
+class ChatPayload(BaseModel):
+    messages: List[ChatMessage]
+    telemetry: dict  # <-- Just add this single line here!
+
+# 3. Swap in your new high-speed endpoint:
+@app.post("/chat")
+def chat_with_advisor(payload: ChatPayload):
+    try:
+        # 1. Grab the last message the user just typed
+        user_query = payload.messages[-1].content.lower() if payload.messages else ""
+        
+        # 2. Smart Keywords that trigger a deep hardware/file investigation
+        deep_keywords = ["file", "download", "slow", "process", "delete", "clear", "space", "my pc", "my computer", "cleanup", "ram", "cpu", "drive", "storage"]
+        
+        # Check if the user is asking for real-time local system output
+        requires_deep_scan = any(keyword in user_query for keyword in deep_keywords)
+        
+        if requires_deep_scan:
+            print("🔍 Deep diagnostic query detected. Running full system scan...")
+            live_diagnostics = get_full_diagnosis()
+        else:
+            print("⚡ Simple query detected. Using instant cache...")
+            live_diagnostics = payload.telemetry
+
+        # 3. Formulate the cozy instruction block
+        system_instruction = (
+            "You are a super bright, warm, and comforting computer mechanic living inside the user's browser. "
+            "Your job is to translate clunky computer metrics into bright, non-technical, baby-step friendly but not too long advice! "
+            "You have direct access to their live system data provided below. Use this information to explicitly "
+            "name specific files, old downloads, heavy applications, or metrics if they are looking to clean things up or troubleshoot. "
+            "Always explain your findings using comforting, baby-step analogies.\n\n"
+            "CRITICAL FORMATTING RULE: Do not use any markdown formatting characters. Never wrap words in double asterisks (like **bold**). "
+            "Keep the text clean, plain, and easy to read.\n\n"
+            f"--- LIVE TELEMETRY SNAPSHOT DATA ---\n{live_diagnostics}\n--------------------------------------"
+        )
+        
+        # 4. Process the message logs
+        contents = []
+        for msg in payload.messages:
+            contents.append(
+                types.Content(
+                    role=msg.role,
+                    parts=[types.Part.from_text(text=msg.content)]
+                )
+            )
+            
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.5
+            )
+        )
+        
+        return {"response": response.text}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gemini Processing Error: {str(e)}")

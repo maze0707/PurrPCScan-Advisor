@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Cpu, HardDrive, ShieldCheck, Activity, RefreshCw, Monitor } from 'lucide-react';
 import HeroAssistant from './components/HeroAssistant.jsx';
+import LiveAdvisorChat from './components/LiveAdvisorChat.jsx';
 
 
 function App() {
@@ -239,7 +240,6 @@ function App() {
 
         {/* Anchor for scrolling to the live scan area */}
         <div id="live-scan-anchor" className="w-full flex justify-center items-center pt-4">
-
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -257,11 +257,15 @@ function App() {
 
       </section>
 
+      {/* Pass the real-time telemetry state into the chat manager dynamically */}
+<LiveAdvisorChat telemetry={telemetry} />
+
       {/* 5. MINIMAL ARCHIVE FOOTER */}
       <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-black/10 flex flex-col sm:flex-row justify-between items-center text-xs text-black font-mono font-medium">
         <p>&copy; 2026 ADVISOR SYSTEM. ALLs INTELLECTUAL TRACKS SECURED.</p>
-        <p className="mt-2 sm:mt-0 tracking-widest uppercase text-black/60">DESIGN DRIVEN BY METRIC DESIGN ARCHITECTURE</p>
+        <p className="mt-2 sm:mt-0">VERSION 4.2 // TELEMETRY CONNECTED</p>
       </footer>
+
     </div>
   );
 }
