@@ -10,6 +10,59 @@ import tempfile
 import re
 
 
+def _best_effort_wmic_first_line(args: list[str]) -> str | None:
+    """
+    Best-effort WMIC helper. Returns the first non-empty line or None.
+    """
+    try:
+        out = subprocess.check_output(args, text=True, stderr=subprocess.DEVNULL)
+        lines = [l.strip() for l in out.splitlines() if l.strip()]
+        if not lines:
+            return None
+        # remove header-ish line if present (wmic outputs header + data)
+        # take the last line as "best-effort value"
+        return lines[-1]
+    except Exception:
+        return None
+
+
+def _get_primary_gpu_name() -> str:
+    # win32_VideoController can list multiple; we take the last non-empty value.
+    name = _best_effort_wmic_first_line(
+        ["wmic", "path", "win32_VideoController", "get", "Name"]
+    )
+    # Sometimes the output includes placeholder headers; clean it.
+    if name and name.lower() in {"name", "videocontroller", "n/a"}:
+        return "Unknown GPU"
+    return name or "Unknown GPU"
+
+
+def _get_windows_os_type_and_version() -> dict:
+    """
+    Returns:
+      - type: e.g., Windows 11 Pro / Windows 11 Home (best-effort from Caption)
+      - version: best-effort OS version/build number
+    """
+    # Caption includes edition+name on Windows (best-effort).
+    caption = _best_effort_wmic_first_line(["wmic", "os", "get", "Caption"])
+    # Version/build best-effort:
+    # platform.version() gives kernel build string; platform.release() gives major/minor.
+    # We'll provide both as strings but keep "version" field human-friendly.
+    version = platform.version() or ""
+    release = platform.release() or ""
+    if version and release and release not in version:
+        version_display = f"{version} ({release})"
+    else:
+        version_display = version or release or "Unknown"
+
+    # Normalize "type" to the edition-ish part (caption).
+    type_display = caption or "Windows (unknown edition)"
+    return {
+        "type": type_display,
+        "version": version_display,
+    }
+
+
 def get_system_info():
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
@@ -77,6 +130,12 @@ def get_system_info():
     if cpu_percent >= 80 or available_memory_gb < 2 or storage_free_percent < 10:
         summary = "Your computer is usable, but there are a few things that may affect performance."
 
+    gpu_name = _get_primary_gpu_name()
+    os_info = _get_windows_os_type_and_version() if platform.system().lower() == "windows" else {
+        "type": "Unknown OS",
+        "version": platform.version() or "Unknown",
+    }
+
     return {
         "summary": summary,
         "cpu": {
@@ -99,6 +158,13 @@ def get_system_info():
                 f"Your main drive has {total_storage_gb} GB of space. "
                 f"About {free_storage_gb} GB is still available."
             ),
+        },
+        "gpu": {
+            "primary_name": gpu_name,
+        },
+        "os": {
+            "type": os_info.get("type", "Unknown OS"),
+            "version": os_info.get("version", "Unknown"),
         },
         "battery": battery_info,
         "recommendations": recommendations,

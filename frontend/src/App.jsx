@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Cpu, HardDrive, ShieldCheck, Activity, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, Cpu, HardDrive, ShieldCheck, Activity, RefreshCw, Monitor } from 'lucide-react';
+import HeroAssistant from './components/HeroAssistant.jsx';
+
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -10,20 +12,29 @@ function App() {
     cpu: '0%',
     memory: '0 GB',
     storage: '0% Free',
+    gpu: 'Unknown GPU',
+    os: 'Windows (unknown)',
     status: 'Ready'
   });
+
   const [isScanning, setIsScanning] = useState(false);
 
   // Core telemetry fetch routine connecting the operational API endpoints
-  const fetchLiveTelemetry = (isManualClick = false) => {
+  const fetchLiveTelemetry = useCallback((isManualClick = false) => {
+
     // Only flash the button's loading text if a human physically clicks it
     if (isManualClick) {
       setIsScanning(true);
     }
 
     
-    // STRATEGY: Query 'localhost' directly since your backend terminal is actively bound to it!
-    fetch('http://localhost:8000/system-info')
+    // STRATEGY: Query same-host backend. During dev, frontend and backend may be served from different ports,
+    // so we include a fallback to localhost/127.0.0.1.
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+    const primary = `${baseUrl}/system-info`;
+
+    fetch(primary)
+
       .then((res) => {
         if (!res.ok) throw new Error("Localhost down");
         return res.json();
@@ -50,7 +61,7 @@ function App() {
             setIsScanning(false); // Unlocks spinner button on complete failure
           });
       });
-  };
+  }, []);
 
   // Helper routine to unpack data variables cleanly
   const updateTelemetryState = (data) => {
@@ -68,13 +79,20 @@ function App() {
 
     const diskFree = data?.storage?.free_percent !== undefined ? `${data.storage.free_percent}% Free` : '0% Free';
 
+    const gpuName = data?.gpu?.primary_name ?? 'Unknown GPU';
+    const osType = data?.os?.type ?? 'Windows (unknown)';
+    const osVersion = data?.os?.version ?? '';
+    const osDisplay = osVersion ? `${osType} • ${osVersion}` : osType;
 
     setTelemetry({
       cpu: cpuLoad,
       memory: ramDisplay,
       storage: diskFree,
+      gpu: gpuName,
+      os: osDisplay,
       status: 'Active'
     });
+
     
     setIsScanning(false); // Unlocks the spinning button loop immediately on success!
   };
@@ -86,7 +104,6 @@ function App() {
   useEffect(() => {
     if (!pollingEnabled) return;
 
-    // First fetch immediately after enabling polling
     fetchLiveTelemetry(false);
 
     const heartbeatInterval = setInterval(() => {
@@ -94,7 +111,8 @@ function App() {
     }, 2000);
 
     return () => clearInterval(heartbeatInterval);
-  }, [pollingEnabled]);
+  }, [pollingEnabled, fetchLiveTelemetry]);
+
 
   // NOTE: Removed automatic polling on page load.
 
@@ -161,11 +179,10 @@ function App() {
             Demystifying hardware diagnostics.
           </h1>
         </div>
-        <div className="lg:col-span-4 pb-4">
-          <p className="font-guka font-medium italic text-lg md:text-xl text-neutral-900 leading-relaxed">
-            An intelligent, real-time hardware diagnostics companion that translates complex background system architecture into plain, actionable human insights.
-          </p>
-        </div>
+        <div className="lg:col-span-4 pb-4"> 
+          {/* Hero description replaced with an interactive animated assistant. */}
+          <HeroAssistant />
+        </div> 
       </section>
 
       {/* 3. SCROLLING DESCRIPTION SECTION */}
@@ -191,9 +208,15 @@ function App() {
           {[
             { title: 'Core Processor', metric: telemetry.cpu, icon: <Cpu size={20} />, status: telemetry.status === 'Active' ? 'Reading' : telemetry.status },
             { title: 'Memory Stack', metric: telemetry.memory, icon: <Activity size={20} />, status: telemetry.status === 'Active' ? 'Reading' : telemetry.status },
+
+            { title: 'GPU', metric: telemetry.gpu, icon: <Monitor size={20} />, status: telemetry.status === 'Active' ? 'Reading' : telemetry.status },
+            { title: 'Windows Type/Version', metric: telemetry.os, icon: <ShieldCheck size={20} />, status: telemetry.status === 'Active' ? 'Active' : telemetry.status },
+
             { title: 'Drive Matrix', metric: telemetry.storage, icon: <HardDrive size={20} />, status: telemetry.status === 'Active' ? 'Reading' : telemetry.status },
             { title: 'System Safety', metric: telemetry.status === 'Active' ? 'Secured' : 'Offline', icon: <ShieldCheck size={20} />, status: telemetry.status === 'Active' ? 'Active' : telemetry.status },
           ].map((item, index) => (
+
+
             <motion.div 
               key={index}
               whileHover={{ y: -6, borderColor: 'rgba(0, 0, 0, 0.4)' }}
@@ -205,7 +228,10 @@ function App() {
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-black/70 font-outfit uppercase tracking-wider font-bold">{item.title}</p>
-                <h3 className="font-outfit font-black text-3xl tracking-tight text-black">{item.metric}</h3>
+                {/* Windows Type/Version should be slightly larger but not overflow; allow wrapping */}
+                <h3 className={`font-outfit font-black tracking-tight text-black ${item.title === 'Windows Type/Version' ? 'text-2xl md:text-xl' : 'text-2xl'} whitespace-normal break-words`}>
+                  {item.metric}
+                </h3>
               </div>
             </motion.div>
           ))}
