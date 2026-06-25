@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;400;600;800&display=swap');
+
+/* stylelint-disable at-rule-no-unknown */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* stylelint-enable at-rule-no-unknown */
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background-color: #ece2e8;
+  color: #141b1d;
+  font-family: 'Outfit', sans-serif;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Custom Hide Scrollbar for clean immersive presentations */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #ffcef7;
+}
+::-webkit-scrollbar-thumb {
+  background: #b1749c;
+  border-radius: 3px;
+}

@@ -1,0 +1,27 @@
+warning: in the working copy of 'backend/main.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'backend/system_scanner.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/backend/main.py b/backend/main.py[m
+[1mindex cc1e1ac..8b314b5 100644[m
+[1m--- a/backend/main.py[m
+[1m+++ b/backend/main.py[m
+[36m@@ -24,7 +24,7 @@[m [mapp = FastAPI()[m
+ [m
+ app.add_middleware([m
+     CORSMiddleware,[m
+[31m-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],[m
+[32m+[m[32m    allow_origins=["*"],[m
+     allow_credentials=True,[m
+     allow_methods=["*"],[m
+     allow_headers=["*"],[m
+[1mdiff --git a/backend/system_scanner.py b/backend/system_scanner.py[m
+[1mindex cecf9c6..c5c177c 100644[m
+[1m--- a/backend/system_scanner.py[m
+[1m+++ b/backend/system_scanner.py[m
+[36m@@ -457,6 +457,7 @@[m [mdef get_app_compatibility(app_name=None, required_memory_gb=None, required_stora[m
+             "plain_english": "Give me the app's minimum RAM and storage needs to see if your computer can run it.",[m
+             "results": [],[m
+             "next_steps": ["Try the same check again with the app's requirements."],[m
+[32m+[m[32m            "app_name": app_name,[m
+         }[m
+ [m
+     can_run = all(result["passes"] for result in results)[m
