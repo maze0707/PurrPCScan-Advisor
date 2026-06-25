@@ -125,7 +125,7 @@ function App() {
       <header className="w-full max-w-7xl mx-auto px-6 py-8 flex justify-between items-center border-b border-black/10 relative z-50">
         <div className="flex items-center gap-2">
           <span className="font-outfit font-extrabold text-xl tracking-compressed text-black">
-            ADVISOR<span className="text-neutral-800">.</span>
+            PurrAdvisor<span className="text-neutral-800">.</span>
           </span>
           <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded text-black font-mono font-medium">V2.6</span>
           
@@ -174,9 +174,9 @@ function App() {
       {/* 2. MINIMALIST HERO ANCHOR BLOCK */}
       <section className="w-full max-w-7xl mx-auto px-6 pt-24 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-end">
         <div className="lg:col-span-8 space-y-6">
-          <span className="text-xs uppercase tracking-ultra text-black font-bold block">INTELLIGENT TELEMETRY DECK</span>
+          <span className="text-xs uppercase tracking-ultra text-black font-bold block">🐾 PC Pulse</span>
           <h1 className="font-outfit font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-compressed leading-none text-black max-w-4xl">
-            Demystifying hardware diagnostics.
+            Demystifying computer troubles.
           </h1>
         </div>
         <div className="lg:col-span-4 pb-4"> 

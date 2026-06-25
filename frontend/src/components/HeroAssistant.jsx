@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import lottie from "lottie-web";
 import robotAnimation from "../assets/robot_wave.json";
+import "./HeroAssistant.css";
 
 export default function HeroAssistant() {
   const containerRef = useRef(null);
@@ -20,9 +21,15 @@ export default function HeroAssistant() {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: 250, height: 250, margin: "0 auto" }}
-    />
-  );
+  <div className="assistant-wrapper">
+    <div className="glow-ring"></div>
+
+    <div className="robot-container">
+      <div
+        ref={containerRef}
+        style={{ width: 260, height: 260 }}
+      />
+    </div>
+  </div>
+);
 }
