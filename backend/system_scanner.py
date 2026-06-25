@@ -457,6 +457,7 @@ def get_app_compatibility(app_name=None, required_memory_gb=None, required_stora
             "plain_english": "Give me the app's minimum RAM and storage needs to see if your computer can run it.",
             "results": [],
             "next_steps": ["Try the same check again with the app's requirements."],
+            "app_name": app_name,
         }
 
     can_run = all(result["passes"] for result in results)
