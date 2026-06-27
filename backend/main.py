@@ -344,8 +344,14 @@ def chat_with_advisor(payload: ChatPayload):
             contents.append(
                 types.Content(role=api_role, parts=[types.Part.from_text(text=msg.content)])
             )
+        # CRITICAL FAILOVER POOL (Cleaned up for 2026 active endpoints)
+        free_models_pool = [
+            'gemini-3.5-flash',       # Try the latest production speed core first!
+            'gemini-3-flash-preview', # First runner-up (Gemini 3 Preview)
+            'gemini-2.5-flash',       # Bulletproof stable backup fallback 
+            'gemini-3.1-flash-lite'   # Fast, ultra-light tier to capture remnants
+        ]
         
-        free_models_pool = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
         response = None
         last_error = None
 
@@ -355,29 +361,38 @@ def chat_with_advisor(payload: ChatPayload):
                 response = client.models.generate_content(
                     model=model_name,
                     contents=contents,
-                    config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.6)
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction, # Let's fallback to plain string configuration
+                        temperature=0.6
+                    )
                 )
                 break
             except Exception as model_err:
-                print(f"⚠️ Model {model_name} encountered an issue: {str(model_err)}")
+                print(f"⚠️ Model {model_name} validation breakdown: {str(model_err)}")
                 last_error = model_err
                 continue
 
         if response is None:
+            print(f"❌ ALL CHAT MODELS EXHAUSTED. LAST SDK RESIDUAL ERROR: {str(last_error)}")
             raise last_error or Exception("All free model pathways are fully exhausted.")
         
-        # 3. Synchronize log records to our local SQLite engine
+        # 3. Synchronize log records to our local SQLite engine (Wrapped in a strict, isolated try/except block)
         try:
             target_token = payload.token_id or "GUEST"
+            # Extract plain text content values to prevent saving rich structures into text columns
+            cpu_val = str(cpu.get("usage_percent", "0%")) if isinstance(cpu, dict) else str(cpu)
+            ram_val = f"{ram.get('used_gb', '0')} / {ram.get('total_gb', '0')} GB" if isinstance(ram, dict) else str(ram)
+            storage_val = str(storage.get("free_percent", "0%")) if isinstance(storage, dict) else str(storage)
+            
             record_node_scan(
                 token_id=target_token,
-                cpu=str(cpu),
-                ram=str(ram),
-                disk=str(storage)
+                cpu=cpu_val,
+                ram=ram_val,
+                disk=storage_val
             )
             print(f"💾 Extended telemetry logged to database for user: {target_token}")
         except Exception as db_sync_err:
-            print(f"⚠️ Database entry bypassed: {str(db_sync_err)}")
+            print(f"⚠️ Database write bypassed due to parameter formatting mismatch: {str(db_sync_err)}")
 
         print(f"⏱️ PIPELINE PROCESS TIME: {time.time() - start_time:.2f} seconds")
         print("="*50 + "\n")
