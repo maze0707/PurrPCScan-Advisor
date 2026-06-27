@@ -255,7 +255,7 @@ def can_run(required_memory_gb: float | None = None, required_storage_gb: float 
     return check_software_requirements(required_memory_gb, required_storage_gb)
 
 
-# ULTRA-LIGHTWEIGHT CHAT PIPELINE - 100% BULLETPROOF WITH AUTOMATIC MODEL ROTATION
+# DEEP SYSTEM DIAGNOSTICS AI CHAT PIPELINE
 @app.post("/chat")
 def chat_with_advisor(payload: ChatPayload):
     try:
@@ -263,28 +263,43 @@ def chat_with_advisor(payload: ChatPayload):
         user_query = payload.messages[-1].content if payload.messages else ""
         
         print("\n" + "="*50)
-        print(f"📥 NEW CHAT MESSAGE: '{user_query}'")
+        print(f"📥 DIAGNOSTICS CHAT INBOUND: '{user_query}'")
         print("="*50)
 
-        # Grab a snapshot of the hardware details automatically
+        # 1. Unpack basic & advanced hardware parameters seamlessly
         live_diagnostics = payload.telemetry
+        cpu = live_diagnostics.get("cpu", "N/A")
+        ram = live_diagnostics.get("memory", "N/A")
+        storage = live_diagnostics.get("storage", "N/A")
+        
+        # Extended Diagnostic Properties
+        thermal = live_diagnostics.get("thermal", "Normal / Stable")
+        battery = live_diagnostics.get("battery", "AC Power / Connected")
+        suspicious_apps = live_diagnostics.get("suspicious_processes", [])
 
-        # Construct system instructions with context-dependent validation rules
+        # 2. Forge a highly context-aware system instruction prompt
         system_instruction = (
             "You are a super bright, warm, and comforting computer mechanic living inside the user's browser. "
-            "Your job is to translate clunky computer metrics into bright, non-technical, baby-step friendly advice! "
-            "CRITICAL ACCESS DIRECTIVE: You have live system diagnostics context below. "
-            "You have direct permission to see and read user files. You MUST inspect the rawData and large_files arrays provided. "
-            "If the user asks about large files or disk issues, read out the exact file names, structural paths, and file sizes from that data! "
-            "Do not give them generic Windows search hints. Tell them the exact file items you see in the telemetry context string.\n\n"
+            "Your job is to translate complex, scary computer metrics into bright, non-technical, baby-step friendly advice!\n\n"
+            "CRITICAL CONTEXT ACCESS: You have complete visibility over live system diagnostics below. "
+            "Use this granular hardware context to diagnose their questions proactively. For example, if their thermal "
+            "temperatures are spiking or if they have suspicious background processes draining RAM, call it out directly "
+            "and suggest friendly fixes!\n\n"
+            f"--- LIVE EXTENDED TELEMETRY SNAPSHOT ---\n"
+            f"💻 CPU Core Utilization: {cpu}\n"
+            f"📊 RAM Allocation Status: {ram}\n"
+            f"💽 Available Volume Storage: {storage}\n"
+            f"🌡️ Thermal State/Temperature: {thermal}\n"
+            f"🔋 Battery Health / Power: {battery}\n"
+            f"⚠️ Flagged/Suspicious Background Processes: {suspicious_apps}\n"
+            "-----------------------------------------\n\n"
             "STRICT CONTEXT-AWARE BUTTON RULE: Do NOT show the optimization action component by default for casual conversations, greeting queries (like 'hi' or 'hello'), or generic chit-chat. "
             "You must ONLY append the exact tracking string '[SHOW_FIX_BUTTON]' at the terminal character sequence of your message body if: "
             "1. The user explicitly prompts you to purge system objects, optimize active performance margins, or perform directory sweeps.\n"
-            "2. They are encountering explicit local volume strain and you determine that an automated system temporary folder clearance is a viable step.\n"
+            "2. They are encountering explicit local volume strain or extreme background process degradation and you determine that an automated cleanup is a viable step.\n"
             "Otherwise, omit this sequence entirely to ensure the layout mechanism remains invisible during casual dialogue.\n\n"
             "CRITICAL FORMATTING RULE: Do not use any markdown formatting syntax. Never wrap phrases in double asterisks (like **bold**). "
-            "Keep the returned response text strictly clean and readable.\n\n"
-            f"--- LIVE TELEMETRY SNAPSHOT DATA ---\n{live_diagnostics}\n--------------------------------------"
+            "Keep the returned response text strictly clean and readable."
         )
         
         contents = []
@@ -294,7 +309,6 @@ def chat_with_advisor(payload: ChatPayload):
                 types.Content(role=api_role, parts=[types.Part.from_text(text=msg.content)])
             )
         
-        # Define available pool of free models to cascade down through
         free_models_pool = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro']
         response = None
         last_error = None
@@ -305,7 +319,7 @@ def chat_with_advisor(payload: ChatPayload):
                 response = client.models.generate_content(
                     model=model_name,
                     contents=contents,
-                    config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.5)
+                    config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.6)
                 )
                 break
             except Exception as model_err:
@@ -316,20 +330,20 @@ def chat_with_advisor(payload: ChatPayload):
         if response is None:
             raise last_error or Exception("All free model pathways are fully exhausted.")
         
-        # --- WRITE TO INTEGRATION DATABASE ---
+        # 3. Synchronize log records to our local SQLite engine
         try:
             target_token = payload.token_id or "GUEST"
             record_node_scan(
                 token_id=target_token,
-                cpu=str(live_diagnostics.get("cpu", "0%")),
-                ram=str(live_diagnostics.get("memory", "0 GB")),
-                disk=str(live_diagnostics.get("storage", "0%"))
+                cpu=str(cpu),
+                ram=str(ram),
+                disk=str(storage)
             )
-            print(f"💾 Log entries processed into SQLite row registries for: {target_token}")
+            print(f"💾 Extended telemetry logged to database for user: {target_token}")
         except Exception as db_sync_err:
-            print(f"⚠️ Database write deferred: {str(db_sync_err)}")
+            print(f"⚠️ Database entry bypassed: {str(db_sync_err)}")
 
-        print(f"⏱️ TOTAL ROUND-TRIP TIME: {time.time() - start_time:.2f} seconds")
+        print(f"⏱️ PIPELINE PROCESS TIME: {time.time() - start_time:.2f} seconds")
         print("="*50 + "\n")
         
         return {"response": response.text}

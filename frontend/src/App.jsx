@@ -21,7 +21,12 @@ function App() {
     storage: '0% Free',
     gpu: 'Unknown GPU',
     os: 'Windows (unknown)',
-    status: 'Ready'
+    status: 'Ready',
+    
+    // EXTENDED PROACTIVE FIELDS FOR THE AI ADVISOR
+    thermal: 'Normal / Stable',
+    battery: 'AC Power / Connected',
+    suspicious_processes: []
   });
 
   const [isScanning, setIsScanning] = useState(false);
@@ -133,6 +138,28 @@ function App() {
       .then(res => res.json())
       .then(data => setSpecData(prev => ({ ...prev, upgradeAdvice: data.advice || 'All architectures fully optimal.' })))
       .catch(() => {});
+
+    // ASYNC EXTENDED BACKGROUND PARSING PIPELINES FOR CHAT SNAPSHOT INTEGRATION
+    fetch(`${baseUrl}/thermal-status`)
+      .then(res => res.json())
+      .then(data => {
+        setTelemetry(prev => ({ ...prev, thermal: data.status || 'Normal / Stable' }));
+      })
+      .catch(() => {});
+
+    fetch(`${baseUrl}/battery-health`)
+      .then(res => res.json())
+      .then(data => {
+        setTelemetry(prev => ({ ...prev, battery: data.status || 'AC Power / Connected' }));
+      })
+      .catch(() => {});
+
+    fetch(`${baseUrl}/suspicious-processes?limit=5`)
+      .then(res => res.json())
+      .then(data => {
+        setTelemetry(prev => ({ ...prev, suspicious_processes: data.suspicious || [] }));
+      })
+      .catch(() => {});
   };
 
   const updateTelemetryState = (data) => {
@@ -150,14 +177,15 @@ function App() {
     const osVersion = data?.os?.version ?? '';
     const osDisplay = osVersion ? `${osType} • ${osVersion}` : osType;
 
-    setTelemetry({
+    setTelemetry(prev => ({
+      ...prev,
       cpu: cpuLoad,
       memory: ramDisplay,
       storage: diskFree,
       gpu: gpuName,
       os: osDisplay,
       status: 'Active'
-    });
+    }));
 
     // Write persistence configuration to browser vault exclusively tied to this session token
     if (sessionToken) {
@@ -478,6 +506,10 @@ function App() {
                       { title: 'Windows Type/Version', metric: telemetry.os, icon: <ShieldCheck size={20} />, status: telemetry.status === 'Active' ? 'Active' : telemetry.status },
                       { title: 'Drive Matrix', metric: telemetry.storage, icon: <HardDrive size={20} />, status: telemetry.status === 'Active' ? 'Reading' : telemetry.status },
                       { title: 'System Safety', metric: telemetry.status === 'Active' ? 'Secured' : 'Offline', icon: <ShieldCheck size={20} />, status: telemetry.status === 'Active' ? 'Active' : telemetry.status },
+                      { title: 'Thermal Core Status', metric: telemetry.thermal, icon: <Zap size={20} />, status: telemetry.status === 'Active' ? 'Live' : 'Offline' },
+                      { title: 'Battery Diagnostics', metric: telemetry.battery, icon: <Activity size={20} />, status: telemetry.status === 'Active' ? 'Live' : 'Offline' }
+
+
                     ].map((item, index) => (
                       <motion.div 
                         key={index}
