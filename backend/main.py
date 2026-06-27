@@ -1,15 +1,53 @@
 import os
-from dotenv import load_dotenv # <-- Added for production-ready security
+from dotenv import load_dotenv 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from google import genai
 from google.genai import types
 import shutil
 import time
 
-# Load environmental variables from the secret .env file before anything else runs!
+# --- DATABASE INTEGRATION LAYER ---
+import sqlite3
+
+def init_sql_db():
+    conn = sqlite3.connect("infrastructure.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS system_nodes (
+            token_id TEXT PRIMARY KEY,
+            registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS telemetry_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            token_id TEXT,
+            cpu_usage TEXT,
+            ram_usage TEXT,
+            disk_free TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
+    conn.close()
+
+def record_node_scan(token_id: str, cpu: str, ram: str, disk: str):
+    conn = sqlite3.connect("infrastructure.db")
+    cursor = conn.cursor()
+    # Ensure node is registered
+    cursor.execute("INSERT OR IGNORE INTO system_nodes (token_id) VALUES (?);", (token_id,))
+    # Record telemetry row entry
+    cursor.execute("""
+        INSERT INTO telemetry_history (token_id, cpu_usage, ram_usage, disk_free)
+        VALUES (?, ?, ?, ?);
+    """, (token_id, cpu, ram, disk))
+    conn.commit()
+    conn.close()
+
+# Load environmental variables from .env file before anything else runs!
 load_dotenv()
 
 from system_scanner import (
@@ -33,6 +71,15 @@ from system_scanner import (
 
 app = FastAPI()
 
+# Automatically initialize the SQLite architecture on application startup
+@app.on_event("startup")
+def startup_event():
+    try:
+        init_sql_db()
+        print("💾 Relational SQLite system infrastructure registry booted up successfully.")
+    except Exception as e:
+        print(f"⚠️ SQLite database initialization deferred: {str(e)}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,6 +99,7 @@ class ChatMessage(BaseModel):
 class ChatPayload(BaseModel):
     messages: List[ChatMessage]
     telemetry: dict
+    token_id: Optional[str] = None  # <-- Fixed parameter bridge link!
 
 @app.get("/")
 def home():
@@ -219,7 +267,6 @@ def chat_with_advisor(payload: ChatPayload):
         print("="*50)
 
         # Grab a snapshot of the hardware details automatically
-        print("🚀 Passing baseline hardware telemetry to advisor context...")
         live_diagnostics = payload.telemetry
 
         # Construct system instructions with context-dependent validation rules
@@ -260,16 +307,28 @@ def chat_with_advisor(payload: ChatPayload):
                     contents=contents,
                     config=types.GenerateContentConfig(system_instruction=system_instruction, temperature=0.5)
                 )
-                # Success break out out of loop execution instantly
                 break
             except Exception as model_err:
-                print(f"⚠️ Model {model_name} encountered an issue or rate limit: {str(model_err)}")
+                print(f"⚠️ Model {model_name} encountered an issue: {str(model_err)}")
                 last_error = model_err
                 continue
 
         if response is None:
             raise last_error or Exception("All free model pathways are fully exhausted.")
         
+        # --- WRITE TO INTEGRATION DATABASE ---
+        try:
+            target_token = payload.token_id or "GUEST"
+            record_node_scan(
+                token_id=target_token,
+                cpu=str(live_diagnostics.get("cpu", "0%")),
+                ram=str(live_diagnostics.get("memory", "0 GB")),
+                disk=str(live_diagnostics.get("storage", "0%"))
+            )
+            print(f"💾 Log entries processed into SQLite row registries for: {target_token}")
+        except Exception as db_sync_err:
+            print(f"⚠️ Database write deferred: {str(db_sync_err)}")
+
         print(f"⏱️ TOTAL ROUND-TRIP TIME: {time.time() - start_time:.2f} seconds")
         print("="*50 + "\n")
         
@@ -286,18 +345,15 @@ def run_optimization():
     try:
         print("🧹 Genuinely purging temporary folders in real-time...")
         
-        # Paths to standard Windows temporary storage dumps
         user_temp = os.environ.get("TEMP")
         system_temp = os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "Temp")
         
         cleaned_count = 0
         freed_bytes = 0
         
-        # Execute folder content evaluation checks safely
         for folder in [user_temp, system_temp]:
             if folder and os.path.exists(folder):
                 try:
-                    # Wrap directory reading in a try-block to catch Windows PermissionErrors
                     items = os.listdir(folder)
                 except Exception as dir_err:
                     print(f"⚠️ Skipping folder {folder} due to system permissions: {str(dir_err)}")
@@ -319,7 +375,6 @@ def run_optimization():
                             freed_bytes += dir_size
                             cleaned_count += 1
                     except Exception:
-                        # Safely bypass active files flagged as locked by open background apps
                         continue
         
         freed_mb = freed_bytes / (1024 * 1024)

@@ -48,12 +48,14 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
       
+      // --- UPDATE THIS BODY SECTION INSIDE LiveAdvisorChat.jsx ---
       const response = await fetch(`${baseUrl}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
-          telemetry: telemetry 
+          telemetry: telemetry,
+          token_id: sessionToken // <-- ADD THIS LINE HERE
         })
       });
 
