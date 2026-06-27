@@ -255,6 +255,42 @@ def can_run(required_memory_gb: float | None = None, required_storage_gb: float 
     return check_software_requirements(required_memory_gb, required_storage_gb)
 
 
+# HISTORICAL TELEMETRY RETRIEVAL PIPELINE
+@app.get("/history/{token_id}")
+def get_telemetry_history(token_id: str):
+    try:
+        conn = sqlite3.connect("infrastructure.db")
+        cursor = conn.cursor()
+        
+        # Query past telemetry scans, ordered by the newest records first
+        cursor.execute("""
+            SELECT cpu_usage, ram_usage, disk_free, timestamp 
+            FROM telemetry_history 
+            WHERE token_id = ? 
+            ORDER BY timestamp DESC
+            LIMIT 10;
+        """, (token_id,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
+        # Format database rows into JSON response dictionary blocks
+        history_list = []
+        for row in rows:
+            history_list.append({
+                "cpu": row[0],
+                "memory": row[1],
+                "storage": row[2],
+                "timestamp": row[3]
+            })
+            
+        return {"success": True, "token_id": token_id, "data": history_list}
+        
+    except Exception as e:
+        print(f"❌ DATABASE HISTORY FETCH FAILURE: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database Retrieval Error: {str(e)}")
+
+
 # DEEP SYSTEM DIAGNOSTICS AI CHAT PIPELINE
 @app.post("/chat")
 def chat_with_advisor(payload: ChatPayload):

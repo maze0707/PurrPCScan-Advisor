@@ -14,6 +14,10 @@ function App() {
   const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
 
+  // --- HISTORY PANEL DATA STATES ---
+  const [historyLogs, setHistoryLogs] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   // Real telemetry state hooks linked precisely to python data maps
   const [telemetry, setTelemetry] = useState({
     cpu: '0%',
@@ -162,6 +166,22 @@ function App() {
       .catch(() => {});
   };
 
+  // DATABASE TELEMETRY LOGS FETCH ROUTINE
+  const fetchHistoryLogs = () => {
+    if (!sessionToken) return;
+    setIsLoadingHistory(true);
+    
+    fetch(`${baseUrl}/history/${sessionToken}`)
+      .then(res => res.json())
+      .then(resData => {
+        if (resData.success) {
+          setHistoryLogs(resData.data);
+        }
+      })
+      .catch(err => console.error("Could not trace metrics history:", err))
+      .finally(() => setIsLoadingHistory(false));
+  };
+
   const updateTelemetryState = (data) => {
     const cpuLoad = data?.cpu?.usage_percent !== undefined ? `${data.cpu.usage_percent}%` : '0%';
     
@@ -284,6 +304,20 @@ function App() {
               >
                 ENGINE_LOG
                 {activeTab === 'overview' && (
+                  <motion.div layoutId="activeUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
+                )}
+              </button>
+
+              <button 
+                onClick={() => {
+                  setActiveTab('history');
+                  fetchHistoryLogs();
+                  document.getElementById('live-scan-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }} 
+                className={`transition-colors pb-1 hover:text-black relative ${activeTab === 'history' ? 'text-black font-bold' : 'text-black/40'}`}
+              >
+                HISTORY_RECORDS
+                {activeTab === 'history' && (
                   <motion.div layoutId="activeUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-black" />
                 )}
               </button>
@@ -484,13 +518,13 @@ function App() {
               
               <div id="live-scan-anchor" className="w-full pt-4 mb-12 flex justify-between items-center">
                 <span className="font-mono text-xs text-black font-bold uppercase tracking-wider">
-                  {activeTab === 'overview' ? '// SYSTEM OVERWATCH LIVE SNAPSHOT' : '// ADVANCED SYSTEM ARCHITECTURE LOGS'}
+                  {activeTab === 'overview' ? '// SYSTEM OVERWATCH LIVE SNAPSHOT' : activeTab === 'history' ? '// HISTORICAL DATABASE TELEMETRY LOGS' : '// ADVANCED SYSTEM ARCHITECTURE LOGS'}
                 </span>
                 <span className={`w-2 h-2 rounded-full ${telemetry.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
               </div>
 
               <AnimatePresence mode="wait">
-                {activeTab === 'overview' ? (
+                {activeTab === 'overview' && (
                   /* --- TAB 1: DEFAULT ENGINE OVERVIEW MATRIX --- */
                   <motion.div 
                     key="overview"
@@ -508,8 +542,6 @@ function App() {
                       { title: 'System Safety', metric: telemetry.status === 'Active' ? 'Secured' : 'Offline', icon: <ShieldCheck size={20} />, status: telemetry.status === 'Active' ? 'Active' : telemetry.status },
                       { title: 'Thermal Core Status', metric: telemetry.thermal, icon: <Zap size={20} />, status: telemetry.status === 'Active' ? 'Live' : 'Offline' },
                       { title: 'Battery Diagnostics', metric: telemetry.battery, icon: <Activity size={20} />, status: telemetry.status === 'Active' ? 'Live' : 'Offline' }
-
-
                     ].map((item, index) => (
                       <motion.div 
                         key={index}
@@ -529,8 +561,69 @@ function App() {
                       </motion.div>
                     ))}
                   </motion.div>
-                ) : (
-                  /* --- TAB 2: CONNECTED DEEP SPECIFICATIONS STACK --- */
+                )}
+
+                {activeTab === 'history' && (
+  <motion.div
+    key="history"
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -10 }}
+    className="w-full bg-white border border-black/10 rounded-3xl p-6 md:p-8 shadow-sm space-y-6 mb-12"
+  >
+    {/* HEADER BAR WITH INTEGRATED QUICK REFRESH */}
+    <div className="flex justify-between items-start gap-4">
+      <div>
+        <h3 className="font-outfit font-black text-xl text-black">Performance Telemetry History</h3>
+        <p className="text-xs text-black/50 font-mono mt-1">Showing up to the last 10 snapshots captured via chat engagement for node: {sessionToken}</p>
+      </div>
+      
+      <button
+        onClick={fetchHistoryLogs}
+        disabled={isLoadingHistory}
+        className="p-2.5 rounded-xl border border-black/10 bg-white hover:bg-neutral-50 shadow-sm text-black transition-all disabled:opacity-50 flex items-center justify-center group"
+        title="Refresh History Logs"
+        style={{ cursor: 'pointer' }}
+      >
+        <RefreshCw size={16} className={`${isLoadingHistory ? 'animate-spin' : 'group-hover:rotate-45 transition-transform'}`} />
+      </button>
+    </div>
+
+    {isLoadingHistory ? (
+      <div className="py-12 text-center text-sm text-black/40 font-mono animate-pulse">Querying local SQLite registries...</div>
+    ) : historyLogs.length === 0 ? (
+                      <div className="py-12 text-center text-sm text-black/40 border border-dashed border-black/10 rounded-2xl bg-neutral-50 font-outfit">
+                        No performance snapshots found for this session yet. Text the Advisor chat box to populate records automatically! 💬
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto w-full rounded-xl border border-black/5">
+                        <table className="w-full text-left border-collapse text-xs md:text-sm font-outfit">
+                          <thead>
+                            <tr className="bg-black text-white font-mono uppercase tracking-wider text-[11px]">
+                              <th className="p-4">Timestamp Matrix</th>
+                              <th className="p-4">Processor Utilization</th>
+                              <th className="p-4">Memory Footprint</th>
+                              <th className="p-4">Available Storage Space</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/5 bg-white">
+                            {historyLogs.map((log, idx) => (
+                              <tr key={idx} className="hover:bg-neutral-50 transition-colors">
+                                <td className="p-4 font-mono text-black/60">{log.timestamp}</td>
+                                <td className="p-4 font-bold text-black">{log.cpu}</td>
+                                <td className="p-4 text-black">{log.memory}</td>
+                                <td className="p-4 text-black/70 font-mono">{log.storage}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {activeTab === 'analytics' && (
+                  /* --- TAB 3: CONNECTED DEEP SPECIFICATIONS STACK --- */
                   <motion.div
                     key="specs"
                     initial={{ opacity: 0, y: 10 }}
