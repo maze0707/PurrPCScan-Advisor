@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Cpu, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, X, Send, Cpu, Loader2, Sparkles, PawPrint, CheckCircle2 } from 'lucide-react';
 
 export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,8 +114,11 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
             className="bg-black text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-2 border border-white/20 hover:bg-neutral-900 transition-colors font-medium text-xs uppercase tracking-wider"
             style={{ cursor: 'pointer' }}
           >
-            <Sparkles size={14} className="text-amber-400 animate-pulse" />
-            Summon PurrPCScan Advisor now!
+            <PawPrint 
+  size={25} 
+  className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.8)]" 
+/>
+            Summon PurrAdvisor
           </motion.button>
         )}
       </AnimatePresence>
@@ -147,17 +150,23 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
             className="absolute bottom-0 right-0 w-[95vw] sm:w-[650px] h-[460px] bg-[#ece2e8] text-[#141b1d] border border-black/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header Area */}
-            <div className="bg-black text-white p-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Cpu size={18} className="text-neutral-400 animate-pulse" />
-                <div>
-                  <h3 className="font-semibold text-sm tracking-wide">ADVISOR COMPANION</h3>
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
-                    SESSION TOKEN: {sessionToken || 'GUEST'}
-                  </span>
-                </div>
-              </div>
-            </div>
+<div className="bg-black text-white p-4 flex items-center justify-between">
+  <div className="flex items-center gap-2.5">
+    
+    {/* 🛠️ NEON PINK GLOW ICON IMPLEMENTATION */}
+    <Cpu 
+      size={18} 
+      className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.9)]" 
+    />
+    
+    <div>
+      <h3 className="font-semibold text-sm tracking-wide">CONNECTING WITH ADVISOR</h3>
+      <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
+        SESSION TOKEN: {sessionToken || 'GUEST'}
+      </span>
+    </div>
+  </div>
+</div>
 
             {/* Chat Body Messaging Stream */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -205,7 +214,7 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
                               </>
                             ) : (
                               <>
-                                <Sparkles size={13} className="text-amber-400" />
+                                <PawPrint size={15} className="text-pink-400" />
                                 Run Safe Optimization
                               </>
                             )}

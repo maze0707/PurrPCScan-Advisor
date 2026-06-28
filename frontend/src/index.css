@@ -28,3 +28,34 @@ html, body, #root {
   background: #b1749c;
   border-radius: 3px;
 }
+
+/* File: index.css or App.css */
+
+.fixed-corner-asset {
+  /* CRITICAL: Anchor position relative to the screen (viewport) */
+  position: fixed; 
+  
+  /* Precision coordinates (bottom-left end of website) */
+  bottom: 0;
+  left: 0;
+  
+  /* Ensure it sits on top of all dashboard contents */
+  z-index: 1000; 
+
+  /* Layout and Sizing constraints */
+  display: flex;
+  padding: 16px; /* Space from the corner edges */
+  pointer-events: none; /* Allows user clicks to pass through to content behind it */
+}
+
+/* Restrict the size of the image itself */
+.fixed-corner-asset img {
+  width: auto;
+  height: auto;
+  
+  /* Adjust this height (in pixels or rem) to set the visual scale */
+  max-height: 120px; 
+  
+  /* Optimize pixel rendering to maintain sharpness */
+  image-rendering: pixelated; 
+}

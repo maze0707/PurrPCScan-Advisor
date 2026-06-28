@@ -21,15 +21,14 @@ export default function HeroAssistant() {
   }, []);
 
   return (
-  <div className="assistant-wrapper">
-    <div className="glow-ring"></div>
+    <div className="assistant-wrapper">
+      <div className="glow-ring"></div>
 
-    <div className="robot-container">
-      <div
-        ref={containerRef}
-        style={{ width: 260, height: 260 }}
-      />
+      <div className="robot-container">
+        <div ref={containerRef} style={{ width: 240, height: 240 }} />
+        
+      </div>
     </div>
-  </div>
-);
+    
+  );
 }

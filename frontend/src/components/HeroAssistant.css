@@ -7,8 +7,21 @@
 .robot-container {
   position: relative;
   z-index: 2;
-
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   animation: float 6s ease-in-out infinite;
+}
+
+.assistant-greeting {
+  position: relative;
+  z-index: 3;
+  margin-top: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  letter-spacing: 0.02em;
 }
 
 .glow-ring {

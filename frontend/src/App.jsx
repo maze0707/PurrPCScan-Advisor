@@ -4,6 +4,16 @@ import { ArrowUpRight, Cpu, HardDrive, ShieldCheck, Activity, RefreshCw, Monitor
 import HeroAssistant from './components/HeroAssistant.jsx';
 import LiveAdvisorChat from './components/LiveAdvisorChat.jsx';
 
+// Custom Typography Style
+const FontLink = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600;1,700&display=swap');
+    .font-whimsy-italic {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+    }
+  `}</style>
+);
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -70,7 +80,6 @@ function App() {
       return;
     }
     
-    // Simulate an instant secure authorization token validation loop
     if (tokenInput.length >= 6) {
       const generatedToken = tokenInput.toUpperCase();
       localStorage.setItem('purradvisor_session_token', generatedToken);
@@ -78,7 +87,6 @@ function App() {
       setIsAuthenticated(true);
       setAuthError('');
 
-      // Instantly evaluate whether this specific token has completed a scan before
       const isScanDoneForThisToken = localStorage.getItem(`purradvisor_scan_completed_${generatedToken}`) === 'true';
       setHasUserRunScanYet(isScanDoneForThisToken);
     } else {
@@ -92,16 +100,14 @@ function App() {
     setTokenInput('');
     setIsAuthenticated(false);
     setPollingEnabled(false);
-    setHasUserRunScanYet(false); // Reset timeline visibility cleanly
+    setHasUserRunScanYet(false); 
   };
 
-  // --- RESTORED & EXPANDED ROUTINE TO INTEGRATE CLICKS ---
   const fetchLiveTelemetry = useCallback((isManualClick = false) => {
     if (isManualClick) {
       setIsScanning(true);
     }
 
-    // Hit the instant lightweight endpoint instead of the heavy drive walker
     fetch(`${baseUrl}/system-info`)
       .then((res) => {
         if (!res.ok) throw new Error("Localhost down");
@@ -131,7 +137,6 @@ function App() {
       });
   }, [baseUrl, sessionToken]);
 
-  // Fetches extra backend parameters to satisfy the deep technical specs view tabs
   const fetchExtendedSpecs = () => {
     fetch(`${baseUrl}/security-check`)
       .then(res => res.json())
@@ -143,7 +148,6 @@ function App() {
       .then(data => setSpecData(prev => ({ ...prev, upgradeAdvice: data.advice || 'All architectures fully optimal.' })))
       .catch(() => {});
 
-    // ASYNC EXTENDED BACKGROUND PARSING PIPELINES FOR CHAT SNAPSHOT INTEGRATION
     fetch(`${baseUrl}/thermal-status`)
       .then(res => res.json())
       .then(data => {
@@ -166,7 +170,6 @@ function App() {
       .catch(() => {});
   };
 
-  // DATABASE TELEMETRY LOGS FETCH ROUTINE
   const fetchHistoryLogs = () => {
     if (!sessionToken) return;
     setIsLoadingHistory(true);
@@ -207,7 +210,6 @@ function App() {
       status: 'Active'
     }));
 
-    // Write persistence configuration to browser vault exclusively tied to this session token
     if (sessionToken) {
       localStorage.setItem(`purradvisor_scan_completed_${sessionToken}`, 'true');
     }
@@ -228,29 +230,28 @@ function App() {
     return () => clearInterval(heartbeatInterval);
   }, [pollingEnabled, fetchLiveTelemetry, isAuthenticated]);
 
-
-  // --- INTERACTIVE AUTOPLAY RUNBOOK CAROUSEL CONTROLS ---
+  // --- 1. HORIZONTAL RUNBOOK CAROUSEL STATE CONTROLS ---
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const steps = [
     {
       step: "01",
-      title: "Initialize Live Scan",
+      title: "Run Live Scan",
       desc: "Tap the 'Run Live Scan' action trigger button. Our lightweight core background probe will securely poll and decode your desktop's hardware data metrics instantly.",
       icon: <Zap size={24} className="text-black" />,
       bg: "bg-white border-black/10"
     },
     {
       step: "02",
-      title: "Review Your Overwatch Cards",
-      desc: "Inspect your system parameters directly via real-time dashboard layout matrices. Read easy-to-digest breakdowns tracking your Processor load, Drive matrix balance, and Memory stacks.",
+      title: "Review the Diagnostics",
+      desc: "Inspect the live telemetry readout to catch any hardware limits or hardware bottlenecks.",
       icon: <Search size={24} className="text-black" />,
       bg: "bg-white border-black/10"
     },
     {
       step: "03",
-      title: "Chat with PurrAdvisor",
-      desc: "Once the baseline snapshot updates, connect instantly with your AI Advisor panel. Get custom, jargon-free optimization steps and trigger secure temporary folder sweeps automatically.",
+      title: "Summon Advisor!",
+      desc: "Summon PurrAdvisor to translate your system telemetry data into instant, actionable fixes.",
       icon: <MessageSquare size={24} className="text-black" />,
       bg: "bg-white border-black/10"
     }
@@ -263,9 +264,54 @@ function App() {
   useEffect(() => {
     const cycleTimer = setInterval(() => {
       handleNextStep();
-    }, 4500);
+    }, 6000);
     return () => clearInterval(cycleTimer);
   }, [handleNextStep]);
+
+  // --- 2. VERTICAL WHY ADVISOR SLIDESHOW STATE CONTROLS ---
+  const [whyIndex, setWhyIndex] = useState(0);
+
+  const whyCards = [
+    {
+      step: "01",
+      title: "Made for Everyone",
+      desc: "Super easy to check, even if you are not a tech person. You don't need a degree in computer science to understand how your machine is doing today.",
+      icon: "🟢",
+      bg: "bg-white border-black/10"
+    },
+    {
+      step: "02",
+      title: "Stop Digging Through Settings",
+      desc: "Forget wasting time clicking through endless storage screens, app managers, and system files. Our advisor does all the heavy hunting for you through simple chat.",
+      icon: "🛑",
+      bg: "bg-white border-black/10"
+    },
+    {
+      step: "03",
+      title: "Just Ask What's Inside",
+      desc: "Wondering exactly what is inside your computer? Just ask the assistant directly instead of searching here, there, and everywhere for your specs.",
+      icon: "💬",
+      bg: "bg-white border-black/10"
+    },
+    {
+      step: "04",
+      title: "Plain English, Always",
+      desc: "Understanding your computer is made genuinely easy. You don't have to type special instructions like 'explain like I am a baby'—our advisor speaks like a human natively.",
+      icon: "✨",
+      bg: "bg-white border-black/10"
+    }
+  ];
+
+  const handleNextWhy = useCallback(() => {
+    setWhyIndex((prev) => (prev + 1) % whyCards.length);
+  }, [whyCards.length]);
+
+  useEffect(() => {
+    const whyTimer = setInterval(() => {
+      handleNextWhy();
+    }, 5000);
+    return () => clearInterval(whyTimer);
+  }, [handleNextWhy]);
 
   return (
     <div className="w-full min-h-screen bg-transparent text-black relative selection:bg-black selection:text-white">
@@ -276,9 +322,9 @@ function App() {
           
           <div className="flex items-center gap-2">
             <span className="font-outfit font-extrabold text-xl tracking-compressed text-black">
-              PurrAdvisor<span className="text-neutral-800">.</span>
+              PurrPCScan Advis<span className="text-neutral-800">.</span>
             </span>
-            <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded text-black font-mono font-medium">V2.6</span>
+            <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded text-black font-mono font-medium">V2.2</span>
             
             {isAuthenticated && (
               <div className="flex items-center gap-1.5 ml-2 bg-black/5 px-2 py-0.5 rounded text-[10px] font-mono">
@@ -362,7 +408,6 @@ function App() {
 
       <AnimatePresence mode="wait">
         {!isAuthenticated ? (
-          /* --- ENTERPRISE PASSWORDLESS SECURITY TERMINAL GATEWAY --- */
           <motion.section 
             key="auth-gate"
             initial={{ opacity: 0, y: 15 }}
@@ -414,7 +459,6 @@ function App() {
             </div>
           </motion.section>
         ) : (
-          /* --- UNLOCKED SAAS DASHBOARD CONTENT ARCHITECTURE --- */
           <motion.div
             key="dashboard-content"
             initial={{ opacity: 0 }}
@@ -428,7 +472,7 @@ function App() {
                   <UserCheck size={12} /> Secure Infrastructure Session Verified
                 </div>
                 <h1 className="font-outfit font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-compressed leading-none text-black max-w-4xl">
-                  Demystifying computer troubles.
+                  Demystifying computer troubles<span className="text-rose-500">.</span>
                 </h1>
               </div>
               <div className="lg:col-span-4 pb-4"> 
@@ -437,23 +481,22 @@ function App() {
             </section>
 
             {/* 3. SCROLLING DESCRIPTION SECTION */}
+            <FontLink />
             <section className="w-full max-w-7xl mx-auto px-6 py-24 border-t border-black/10 mt-12">
               <div className="w-full">
-                <span className="text-xs font-mono text-black/50 uppercase tracking-widest block mb-6">
-                  // OUR MISSION //
-                </span>
-                <h2 className="font-outfit font-bold text-xl md:text-3xl lg:text-4xl tracking-compressed leading-relaxed text-black text-justify">
-                  Hey there! Think of this website as a super friendly mechanic for your computer, living right inside your browser. We translate clunky computer jargon into bright, easy, and super cheerful tips so you always know exactly how your desktop companion is feeling today! ✨
+                <h2 className="font-outfit font-bold text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.25] text-black text-left max-w-5xl">
+                  <span className="font-whimsy-italic font-medium pr-2">PurrAdvisor</span> 
+                  is a digital companion crafting clear diagnostic insights with just a touch of
+                  <span className="font-whimsy-italic font-medium pl-2">whimsy.</span> 🐾
                 </h2>
               </div>
             </section>
 
-            {/* 4. IMMERSIVE RUNBOOK */}
+            {/* 4. IMMERSIVE RUNBOOK (RESTORED TO ORIGINAL SIDE-TO-SIDE SLIDESHOW SETUP) */}
             <section className="w-full max-w-7xl mx-auto px-6 py-20 border-t border-black/10 bg-transparent">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 <div className="lg:col-span-5 space-y-6">
                   <div className="space-y-2">
-                    <span className="text-xs font-mono text-black/40 uppercase tracking-widest block">// SETUP GUIDE ENGINE</span>
                     <h3 className="font-outfit font-black text-3xl md:text-5xl tracking-tight text-black leading-tight">
                       How to use <br />this application:
                     </h3>
@@ -515,17 +558,15 @@ function App() {
 
             {/* 5. DYNAMIC TAB MATRIX CONTAINER PANEL */}
             <section id="diagnose" className="w-full max-w-7xl mx-auto px-6 py-12 border-t border-black/10 relative z-40 bg-transparent scroll-mt-24">
-              
               <div id="live-scan-anchor" className="w-full pt-4 mb-12 flex justify-between items-center">
                 <span className="font-mono text-xs text-black font-bold uppercase tracking-wider">
-                  {activeTab === 'overview' ? '// SYSTEM OVERWATCH LIVE SNAPSHOT' : activeTab === 'history' ? '// HISTORICAL DATABASE TELEMETRY LOGS' : '// ADVANCED SYSTEM ARCHITECTURE LOGS'}
+                  {activeTab === 'overview' ? 'LIVE SNAPSHOT' : activeTab === 'history' ? '// HISTORICAL DATABASE TELEMETRY LOGS' : '// ADVANCED SYSTEM ARCHITECTURE LOGS'}
                 </span>
                 <span className={`w-2 h-2 rounded-full ${telemetry.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
               </div>
 
               <AnimatePresence mode="wait">
                 {activeTab === 'overview' && (
-                  /* --- TAB 1: DEFAULT ENGINE OVERVIEW MATRIX --- */
                   <motion.div 
                     key="overview"
                     initial={{ opacity: 0, y: 10 }}
@@ -564,36 +605,34 @@ function App() {
                 )}
 
                 {activeTab === 'history' && (
-  <motion.div
-    key="history"
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -10 }}
-    className="w-full bg-white border border-black/10 rounded-3xl p-6 md:p-8 shadow-sm space-y-6 mb-12"
-  >
-    {/* HEADER BAR WITH INTEGRATED QUICK REFRESH */}
-    <div className="flex justify-between items-start gap-4">
-      <div>
-        <h3 className="font-outfit font-black text-xl text-black">Performance Telemetry History</h3>
-        <p className="text-xs text-black/50 font-mono mt-1">Showing up to the last 10 snapshots captured via chat engagement for node: {sessionToken}</p>
-      </div>
-      
-      <button
-        onClick={fetchHistoryLogs}
-        disabled={isLoadingHistory}
-        className="p-2.5 rounded-xl border border-black/10 bg-white hover:bg-neutral-50 shadow-sm text-black transition-all disabled:opacity-50 flex items-center justify-center group"
-        title="Refresh History Logs"
-        style={{ cursor: 'pointer' }}
-      >
-        <RefreshCw size={16} className={`${isLoadingHistory ? 'animate-spin' : 'group-hover:rotate-45 transition-transform'}`} />
-      </button>
-    </div>
+                  <motion.div
+                    key="history"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="w-full bg-white border border-black/10 rounded-3xl p-6 md:p-8 shadow-sm space-y-6 mb-12"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div>
+                        <h3 className="font-outfit font-black text-xl text-black">Performance Telemetry History</h3>
+                        <p className="text-xs text-black/50 font-mono mt-1">Showing up to the last 10 snapshots captured via chat engagement for node: {sessionToken}</p>
+                      </div>
+                      <button
+                        onClick={fetchHistoryLogs}
+                        disabled={isLoadingHistory}
+                        className="p-2.5 rounded-xl border border-black/10 bg-white hover:bg-neutral-50 shadow-sm text-black transition-all disabled:opacity-50 flex items-center justify-center group"
+                        title="Refresh History Logs"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <RefreshCw size={16} className={`${isLoadingHistory ? 'animate-spin' : 'group-hover:rotate-45 transition-transform'}`} />
+                      </button>
+                    </div>
 
-    {isLoadingHistory ? (
-      <div className="py-12 text-center text-sm text-black/40 font-mono animate-pulse">Querying local SQLite registries...</div>
-    ) : historyLogs.length === 0 ? (
+                    {isLoadingHistory ? (
+                      <div className="py-12 text-center text-sm text-black/40 font-mono animate-pulse">Querying local SQLite registries...</div>
+                    ) : historyLogs.length === 0 ? (
                       <div className="py-12 text-center text-sm text-black/40 border border-dashed border-black/10 rounded-2xl bg-neutral-50 font-outfit">
-                        No performance snapshots found for this session yet. Text the Advisor chat box to populate records automatically! 💬
+                        No performance snapshots found for this session yet. Text the Advisor chat box to populate records automatically! 🐾
                       </div>
                     ) : (
                       <div className="overflow-x-auto w-full rounded-xl border border-black/5">
@@ -606,16 +645,39 @@ function App() {
                               <th className="p-4">Available Storage Space</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-black/5 bg-white">
-                            {historyLogs.map((log, idx) => (
-                              <tr key={idx} className="hover:bg-neutral-50 transition-colors">
-                                <td className="p-4 font-mono text-black/60">{log.timestamp}</td>
-                                <td className="p-4 font-bold text-black">{log.cpu}</td>
-                                <td className="p-4 text-black">{log.memory}</td>
-                                <td className="p-4 text-black/70 font-mono">{log.storage}</td>
-                              </tr>
-                            ))}
-                          </tbody>
+                          {/* NEW UPDATED TIMESTAMPS CODE */}
+<tbody className="divide-y divide-black/5 bg-white">
+  {historyLogs.map((log, idx) => {
+    // Dynamically parsing database UTC strings into local user time strings
+    let localTimeStr = log.timestamp;
+    try {
+      // Append 'Z' to explicitly treat the string as UTC if it doesn't specify a timezone
+      const utcDate = new Date(log.timestamp.includes('Z') ? log.timestamp : `${log.timestamp.replace(' ', 'T')}Z`);
+      if (!isNaN(utcDate.getTime())) {
+        localTimeStr = utcDate.toLocaleString(undefined, {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).replace(/,/, ''); // Cleans up layout punctuation formatting
+      }
+    } catch (e) {
+      console.error("Timestamp parse error fallback active", e);
+    }
+
+    return (
+      <tr key={idx} className="hover:bg-neutral-50 transition-colors">
+        <td className="p-4 font-mono text-black/60">{localTimeStr}</td>
+        <td className="p-4 font-bold text-black">{log.cpu}</td>
+        <td className="p-4 text-black">{log.memory}</td>
+        <td className="p-4 text-black/70 font-mono">{log.storage}</td>
+      </tr>
+    );
+  })}
+</tbody>
                         </table>
                       </div>
                     )}
@@ -623,7 +685,6 @@ function App() {
                 )}
 
                 {activeTab === 'analytics' && (
-                  /* --- TAB 3: CONNECTED DEEP SPECIFICATIONS STACK --- */
                   <motion.div
                     key="specs"
                     initial={{ opacity: 0, y: 10 }}
@@ -676,7 +737,77 @@ function App() {
                   {isScanning ? 'INTERROGATING BACKEND CORE...' : 'RUN LIVE SCAN'}
                 </motion.button>
               </div>
+            </section>
 
+            {/* 🌟 NEW WHY USE PURRPCSCANADVISOR SECTION (FEATURING VERTICAL SLIDESHOW ANIMATION EFFECT) */}
+            <section className="w-full max-w-7xl mx-auto px-6 py-20 border-t border-black/10 bg-transparent">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div className="lg:col-span-5 space-y-6">
+                  <div className="space-y-2">
+                    <h2 className="font-outfit font-black text-3xl md:text-5xl tracking-tight text-black leading-tight">
+                      Why Use <br />PurrPCScan Advisor?
+                    </h2>
+                    <p className="mt-2 text-xs text-neutral-500 font-mono uppercase tracking-wider">
+                      Built for people, not just programmers
+                    </p>
+                  </div>
+                  
+                  {/* Vertical Progression Control Strip */}
+                  <div className="flex flex-col gap-4 pt-2 w-fit">
+                    <div className="flex flex-col gap-2">
+                      {whyCards.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setWhyIndex(idx)}
+                          className={`w-1.5 transition-all duration-300 rounded-full ${whyIndex === idx ? 'h-8 bg-black' : 'h-2 bg-black/20'}`}
+                          aria-label={`Go to reason ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handleNextWhy}
+                      className="group p-2 w-10 h-10 rounded-full border border-black/10 hover:border-black/40 bg-white shadow-sm flex items-center justify-center transition-all"
+                      aria-label="Next reason"
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <ArrowRight size={16} className="text-black rotate-90 group-hover:translate-y-0.5 transition-transform" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Vertical Slideshow Slide Frame */}
+                <div className="lg:col-span-7 relative h-[320px] sm:h-[280px] w-full flex items-center justify-center overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={whyIndex}
+                      initial={{ opacity: 0, y: 40 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -40 }}
+                      transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                      className={`absolute inset-0 w-full h-full ${whyCards[whyIndex].bg} border p-8 sm:p-10 rounded-[32px] flex flex-col justify-between shadow-sm`}
+                    >
+                      <div className="flex justify-between items-start w-full">
+                        <div className="text-xl bg-black/5 w-12 h-12 flex items-center justify-center rounded-2xl">
+                          {whyCards[whyIndex].icon}
+                        </div>
+                        <span className="font-mono text-5xl font-black text-black/10 tracking-tighter">
+                          {whyCards[whyIndex].step}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 max-w-xl mt-8">
+                        <h4 className="font-outfit font-black text-xl md:text-2xl tracking-tight text-black">
+                          {whyCards[whyIndex].title}
+                        </h4>
+                        <p className="text-sm sm:text-base text-black/60 font-outfit leading-relaxed">
+                          {whyCards[whyIndex].desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
             </section>
 
             <LiveAdvisorChat telemetry={telemetry} hasScanned={hasUserRunScanYet} sessionToken={sessionToken} />
@@ -685,11 +816,27 @@ function App() {
       </AnimatePresence>
 
       {/* 5. MINIMAL ARCHIVE FOOTER */}
-      <footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-black/10 flex flex-col sm:flex-row justify-between items-center text-xs text-black font-mono font-medium">
-        <p>&copy; 2026 ADVISOR SYSTEM. ALLs INTELLECTUAL TRACKS SECURED.</p>
-        <p className="mt-2 sm:mt-0">VERSION 4.2 // TELEMETRY CONNECTED</p>
-      </footer>
+<footer className="w-full max-w-7xl mx-auto px-6 py-8 border-t border-black/10 flex flex-col items-center justify-center text-center text-xs text-black font-mono font-medium gap-1">
+  
+  {/* Kitty Asset - Added relative positioning and translation to push it down individually */}
+  <div className="pointer-events-none select-none relative top-12">
+    <img 
+      src="/kitty.gif" 
+      alt="Kitty Advisor" 
+      className="w-20 h-auto"
+      style={{ 
+        imageRendering: 'pixelated',
+        filter: 'drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.3))'
+      }} 
+    />
+  </div>
 
+  {/* Text Layout Stack - Restored completely to original values */}
+  <div className="flex flex-col sm:flex-row justify-between items-center w-full gap-2 sm:gap-0 mt-2">
+    <p>&copy; 2026 ADVISOR SYSTEM.</p>
+    <p>VERSION 2.2 - TELEMETRY CONNECTED</p>
+  </div>
+</footer>
     </div>
   );
 }
