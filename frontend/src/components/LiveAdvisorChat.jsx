@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Cpu, Loader2, Sparkles, PawPrint, CheckCircle2 } from 'lucide-react';
 
-export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken }) {
+export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken, isSandboxMode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,17 +45,35 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
     setInput('');
     setIsLoading(true);
 
+    // --- SANDBOX MODE INTERCEPT ROUTINE ---
+    if (isSandboxMode) {
+      setTimeout(() => {
+        let sandboxReply = "I'm monitoring your desktop metrics closely in Sandbox Mode! 🐾\n\nYour CPU load and memory stacks look excellent. If you notice any micro-stutters while loading intensive assets, we can run a safe performance clean sweep right now.\n\n[SHOW_FIX_BUTTON]";
+        
+        // Customized response fallback suggestions based on common text queries
+        const cleanQuery = input.toLowerCase();
+        if (cleanQuery.includes('slow') || cleanQuery.includes('lag') || cleanQuery.includes('freeze')) {
+          sandboxReply = "Oh, no! Stutters are the absolute worst. 🐈‍⬛ Looking at your sandbox parameters, your RAM overhead is fine, but temporary caches could be fragmented. Let's execute a sweep to flush background handlers!\n\n[SHOW_FIX_BUTTON]";
+        } else if (cleanQuery.includes('cpu') || cleanQuery.includes('ram') || cleanQuery.includes('spec')) {
+          sandboxReply = `Let's read your sandbox profile: \n🐈‍⬛ Processor Usage: ${telemetry.cpu}\n🐈‍⬛ Memory Stack: ${telemetry.memory}\n🐈‍⬛ Graphics Card: ${telemetry.gpu}\nEverything looks completely nominal. No core anomalies detected!`;
+        }
+
+        setMessages([...updatedMessages, { role: 'model', content: sandboxReply }]);
+        setIsLoading(false);
+      }, 1000);
+      return;
+    }
+
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
       
-      // --- UPDATE THIS BODY SECTION INSIDE LiveAdvisorChat.jsx ---
       const response = await fetch(`${baseUrl}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: updatedMessages.map(m => ({ role: m.role, content: m.content })),
           telemetry: telemetry,
-          token_id: sessionToken // <-- ADD THIS LINE HERE
+          token_id: sessionToken
         })
       });
 
@@ -70,10 +88,20 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
     }
   };
 
-  // Handler to call our new proactive backend optimization route
+  // Handler to call our proactive backend optimization route
   const handleSystemOptimize = async () => {
     setIsOptimizing(true);
     setOptimizationResult('');
+
+    // --- SANDBOX MODE INTERCEPT ROUTINE ---
+    if (isSandboxMode) {
+      setTimeout(() => {
+        setOptimizationResult("Sandbox Optimization Complete! 1.4 GB of simulated crash logs and user temp files have been cleared. Performance buffers are optimized! ✨");
+        setIsOptimizing(false);
+      }, 1500);
+      return;
+    }
+
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
       const response = await fetch(`${baseUrl}/optimize`, {
@@ -115,9 +143,9 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
             style={{ cursor: 'pointer' }}
           >
             <PawPrint 
-  size={25} 
-  className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.8)]" 
-/>
+              size={25} 
+              className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.8)]" 
+            />
             Summon PurrAdvisor
           </motion.button>
         )}
@@ -150,34 +178,28 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
             className="absolute bottom-0 right-0 w-[95vw] sm:w-[650px] h-[460px] bg-[#ece2e8] text-[#141b1d] border border-black/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header Area */}
-<div className="bg-black text-white p-4 flex items-center justify-between">
-  <div className="flex items-center gap-2.5">
-    
-    {/* 🛠️ NEON PINK GLOW ICON IMPLEMENTATION */}
-    <Cpu 
-      size={18} 
-      className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.9)]" 
-    />
-    
-    <div>
-      <h3 className="font-semibold text-sm tracking-wide">CONNECTING WITH ADVISOR</h3>
-      <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
-        SESSION TOKEN: {sessionToken || 'GUEST'}
-      </span>
-    </div>
-  </div>
-</div>
+            <div className="bg-black text-white p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Cpu 
+                  size={18} 
+                  className="text-pink-400 animate-pulse drop-shadow-[0_0_6px_rgba(244,114,182,0.9)]" 
+                />
+                <div>
+                  <h3 className="font-semibold text-sm tracking-wide">
+                    {isSandboxMode ? "CONNECTING WITH ADVISOR (DEMO)" : "CONNECTING WITH ADVISOR"}
+                  </h3>
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">
+                    {isSandboxMode ? "SESSION: SANDBOX_STANDIN" : `SESSION TOKEN: ${sessionToken || 'GUEST'}`}
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* Chat Body Messaging Stream */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((msg, index) => {
-                // 1. Detect if this model response has the proactive automation trigger flag
                 const hasFixButtonFlag = msg.content.includes("[SHOW_FIX_BUTTON]");
-                
-                // 2. Clean the string text token out so it remains invisible to the user
                 let displayCleanText = msg.content.replace("[SHOW_FIX_BUTTON]", "").trim();
-                
-                // 3. Keep your existing cat indicator replacement rule intact
                 displayCleanText = displayCleanText.replace(/^\s*\*\s+/gm, '🐈‍⬛ ');
 
                 return (
@@ -192,7 +214,6 @@ export default function LiveAdvisorChat({ telemetry, hasScanned, sessionToken })
                           : 'bg-white text-[#141b1d] rounded-bl-none shadow-sm border border-black/5'
                       }`}
                     >
-                      {/* Cleaned plain text description */}
                       <div>{displayCleanText}</div>
 
                       {/* --- FRONTEND INTENT-DRIVEN ACTION INTERFACE --- */}
